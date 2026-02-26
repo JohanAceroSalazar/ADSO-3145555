@@ -1,21 +1,21 @@
-package com.sena.test.IRepository.ISecurityRepository;
+package com.sena.test.IRepository.IBillRepository;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import com.sena.test.Entity.Security.Role;
+import com.sena.test.Entity.Bill.Bill;
 
 @Repository
-public interface RoleRepository extends JpaRepository<Role, Integer>{
+public interface BillRepository extends JpaRepository<Bill, Integer>{
 
     @Query(""
 			+ "SELECT "
-			+ "r "
+			+ "b "
 			+ "FROM "
-			+ "role r "
+			+ "bill b "
 			+ "WHERE "
-			+ "r.role like %?1%"
+			+ "b.date like %?1%"
 			)
-	public List<Role>filterByRole(String role);
+	public List<Bill>filterByDate(String date);
 }

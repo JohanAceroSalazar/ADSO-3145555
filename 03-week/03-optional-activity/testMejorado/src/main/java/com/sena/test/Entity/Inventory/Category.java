@@ -1,10 +1,12 @@
 package com.sena.test.Entity.Inventory;
 
+import java.util.List;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 
 @Entity(name = "category")
 public class Category {
@@ -19,6 +21,9 @@ public class Category {
 
     @Column(name = "description")
     private String description;
+
+    @OneToMany(mappedBy = "category")
+    private List<Product> products;
 
     public Category(){}
 

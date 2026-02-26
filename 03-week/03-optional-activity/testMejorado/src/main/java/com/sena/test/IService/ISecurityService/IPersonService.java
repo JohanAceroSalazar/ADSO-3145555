@@ -1,7 +1,6 @@
 package com.sena.test.IService.ISecurityService;
 
 import java.util.List;
-
 import com.sena.test.Dto.SecurityDto.PersonDto;
 import com.sena.test.Entity.Security.Person;
 

@@ -1,37 +1,12 @@
-package com.sena.test.Entity.Inventory;
+package com.sena.test.Dto.InventoryDto;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-
-@Entity(name ="product")
-public class Product {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_product")
+public class ProductDto {
     private int id;
-
-    @Column(name = "name_product")
     private String name_product;
-    
-    @Column(name = "price")
     private double price;
-
-    @Column(name = "description")
     private String description;
 
-    @ManyToOne
-    @JoinColumn(name = "id_category")
-    private Category category;
-
-    public Product(){}
-
-    public Product(int id, String name_product, double price, String description) {
+    public ProductDto(int id, String name_product, double price, String description) {
         this.id = id;
         this.name_product = name_product;
         this.price = price;
