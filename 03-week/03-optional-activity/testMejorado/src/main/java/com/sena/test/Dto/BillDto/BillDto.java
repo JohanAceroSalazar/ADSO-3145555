@@ -1,13 +1,13 @@
 package com.sena.test.Dto.BillDto;
 
-import java.time.LocalDate;
+import java.sql.Date;
 
 public class BillDto {
     private int id;
-    private LocalDate date;
+    private Date date;
     private double total;
 
-    public BillDto(int id, LocalDate date, double total) {
+    public BillDto(int id, Date date, double total) {
         this.id = id;
         this.date = date;
         this.total = total;
@@ -21,11 +21,11 @@ public class BillDto {
         this.id = id;
     }
 
-    public LocalDate getDate() {
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(LocalDate date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 

@@ -15,7 +15,7 @@ public interface CategoryRepository extends JpaRepository <Category, Integer>{
 			+ "FROM "
 			+ "category c "
 			+ "WHERE "
-			+ "p.name_category like %?1%"
+			+ "c.name_category like %?1%"
 			)
 	public List<Category>filterByNameCategory(String name_category);
 }

@@ -15,7 +15,7 @@ public interface BillDetailsRepository extends JpaRepository<BillDetails, Intege
 			+ "FROM "
 			+ "bill_details b "
 			+ "WHERE "
-			+ "p.quantity like %?1%"
+			+ "b.quantity = ?1"
 			)
 	public List<BillDetails>filterByQuantity(int quantity);
 }

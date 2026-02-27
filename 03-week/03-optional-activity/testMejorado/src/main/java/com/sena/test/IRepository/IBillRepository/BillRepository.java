@@ -1,5 +1,6 @@
 package com.sena.test.IRepository.IBillRepository;
 
+import java.sql.Date;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,7 +16,7 @@ public interface BillRepository extends JpaRepository<Bill, Integer>{
 			+ "FROM "
 			+ "bill b "
 			+ "WHERE "
-			+ "b.date like %?1%"
+			+ "b.date = ?1"
 			)
-	public List<Bill>filterByDate(String date);
+	public List<Bill>filterByDate(Date date);
 }

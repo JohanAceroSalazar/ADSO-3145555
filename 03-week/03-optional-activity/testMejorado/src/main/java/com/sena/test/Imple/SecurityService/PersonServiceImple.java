@@ -3,7 +3,6 @@ package com.sena.test.Imple.SecurityService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.sena.test.Dto.SecurityDto.PersonDto;
 import com.sena.test.Entity.Security.Person;
 import com.sena.test.IRepository.ISecurityRepository.PersonRepository;

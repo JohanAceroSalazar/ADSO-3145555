@@ -1,10 +1,8 @@
 package com.sena.test.Entity.Bill;
 
-import java.time.LocalDate;
+import java.sql.Date;
 import java.util.List;
-
 import com.sena.test.Entity.Security.User;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -23,7 +21,7 @@ public class Bill {
     private int id;
 
     @Column(name = "date")
-    private LocalDate date;
+    private Date date;
 
     @Column(name = "total")
     private double total;
@@ -37,7 +35,7 @@ public class Bill {
 
     public Bill(){}
 
-    public Bill(int id, LocalDate date, double total) {
+    public Bill(int id, Date date, double total) {
         this.id = id;
         this.date = date;
         this.total = total;
@@ -51,11 +49,11 @@ public class Bill {
         this.id = id;
     }
 
-    public LocalDate getDate() {
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(LocalDate date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
