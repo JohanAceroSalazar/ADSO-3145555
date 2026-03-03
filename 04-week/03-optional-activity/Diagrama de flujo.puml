@@ -1,0 +1,102 @@
+@startuml BPMN_Cafetin_Oficial
+title BPMN - Sistema de Pedidos Cafetín
+
+skinparam backgroundColor #F5F5F5
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam linetype ortho
+
+' =========================
+' CLIENTE
+' =========================
+|Cliente|
+start
+:Ingresar al sitio web;
+
+' =========================
+' SISTEMA
+' =========================
+|Sistema|
+:Mostrar pantalla principal;
+:Validar disponibilidad del menú;
+
+if (¿Menú disponible?) then (No)
+    :Mostrar mensaje\n"Sistema no disponible";
+    stop
+else (Sí)
+    :Mostrar productos disponibles;
+endif
+
+' =========================
+' CLIENTE
+' =========================
+|Cliente|
+:Seleccionar productos;
+
+if (¿Agregar más productos?) then (Sí)
+    :Seguir seleccionando;
+else (No)
+endif
+
+:Revisar carrito;
+:Modificar o eliminar productos;
+
+if (¿Confirmar pedido?) then (No)
+    :Seguir editando carrito;
+else (Sí)
+endif
+
+' =========================
+' SISTEMA
+' =========================
+|Sistema|
+:Registrar pedido;
+:Generar ID del pedido;
+:Enviar pedido al personal de cafetería;
+
+' =========================
+' PERSONAL CAFETÍN
+' =========================
+|Personal Cafetín|
+:Recibir pedido;
+:Validar disponibilidad de productos;
+
+if (¿Productos disponibles?) then (No)
+    :Notificar al sistema\nproducto no disponible;
+    stop
+else (Sí)
+    :Aceptar pedido;
+endif
+
+:Preparar pedido;
+:Marcar pedido como LISTO;
+
+' =========================
+' SISTEMA
+' =========================
+|Sistema|
+:Notificar al cliente\n"Pedido listo";
+
+' =========================
+' CLIENTE
+' =========================
+|Cliente|
+:Retirar pedido;
+
+' =========================
+' PERSONAL CAFETÍN
+' =========================
+|Personal Cafetín|
+:Confirmar entrega;
+
+' =========================
+' SISTEMA
+' =========================
+|Sistema|
+:Marcar pedido como ENTREGADO;
+
+|Cliente|
+:Fin del proceso;
+
+stop
+@enduml
