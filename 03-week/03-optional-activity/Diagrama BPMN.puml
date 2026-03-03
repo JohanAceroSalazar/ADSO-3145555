@@ -1,0 +1,74 @@
+@startuml BPMN_Cafetin
+title BPMN - Sistema de Pedidos Cafetín
+
+skinparam backgroundColor #F5F5F5
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam linetype ortho
+
+|Cliente|
+start
+:Abre el sitio web;
+
+|Frontend|
+:Mostrar pantalla principal;
+:Solicitar disponibilidad del menú;
+
+|Backend|
+:Validar si el menú está disponible;
+
+if (¿Menú disponible?) then (No)
+    :Sistema no disponible;
+    stop
+else (Sí)
+    :Enviar productos;
+endif
+
+|Frontend|
+:Mostrar productos;
+
+|Cliente|
+if (¿Selecciona productos?) then (No)
+    stop
+else (Sí)
+endif
+
+|Frontend|
+:Agregar producto al carrito;
+
+|Cliente|
+if (¿Agregar más productos?) then (Sí)
+    :Seguir seleccionando;
+else (No)
+endif
+
+|Frontend|
+:Mostrar carrito;
+
+|Cliente|
+:Modificar o eliminar productos;
+
+|Frontend|
+if (¿Realiza cambios?) then (Sí)
+    :Actualizar carrito;
+else (No)
+endif
+
+|Cliente|
+:Confirmar pedido;
+
+|Frontend|
+:Enviar pedido;
+
+|Backend|
+:Registrar pedido en sistema;
+:Generar ID del pedido;
+
+|Frontend|
+:Mostrar confirmación al cliente;
+
+|Cliente|
+:Pedido confirmado;
+
+stop
+@enduml

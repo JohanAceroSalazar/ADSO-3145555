@@ -1,0 +1,50 @@
+@startuml Diagrama_Flujo_Cafetin
+title Diagrama de Flujo - Sistema Cafetín
+
+skinparam backgroundColor #F5F5F5
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam linetype ortho
+
+skinparam activity {
+    BackgroundColor #A5D6FF
+    BorderColor #4A90E2
+    BorderThickness 2
+}
+
+start
+
+:Usuario abre el sitio web;
+:Visualiza pantalla principal;
+
+if (Menu disponible?) then (No)
+    :Sistema no disponible;
+    stop
+else (Sí)
+    :Mostrar productos;
+endif
+
+if (¿Usuario selecciona productos?) then (No)
+    stop
+else (Sí)
+    :Agregar al carrito;
+endif
+
+if (¿Agregar más productos?) then (Sí)
+    :Volver a visualizar menú de productos;
+else (No)
+    :Revisar carrito;
+endif
+
+:Modificar o eliminar productos;
+
+if (¿Realizar cambios?) then (Sí)
+    :Actualizar carrito;
+else (No)
+    :Carrito confirmado;
+endif
+
+:Confirmar pedido;
+
+stop
+@enduml
