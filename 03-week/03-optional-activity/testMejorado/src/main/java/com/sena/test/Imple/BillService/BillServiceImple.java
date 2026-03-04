@@ -49,8 +49,8 @@ public class BillServiceImple implements IBillService{
         );
     }
 
-    public Bill entityToDto(Bill bill){
-        return new Bill(
+    public BillDto entityToDto(Bill bill){
+        return new BillDto(
             bill.getId(),
             bill.getDate(),
             bill.getTotal()
@@ -72,6 +72,6 @@ public class BillServiceImple implements IBillService{
     @Override
     public String delete(int id){
         repo.deleteById(id);
-        return null;
+        return "Factura eliminada correctamente";
     }
 }

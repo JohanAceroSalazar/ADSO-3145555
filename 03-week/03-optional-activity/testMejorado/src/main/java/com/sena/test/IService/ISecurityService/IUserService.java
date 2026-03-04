@@ -8,7 +8,7 @@ import com.sena.test.Entity.Security.User;
 
 public interface IUserService {
 
-    public List<User> findAll();
+    public List<UserDto> findAll();
     public User findById(int id);
     String update(int id, UserDto userDto);
     public List<User> filterByName(String user_name);

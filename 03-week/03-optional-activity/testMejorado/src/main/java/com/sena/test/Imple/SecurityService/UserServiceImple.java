@@ -4,7 +4,6 @@ package com.sena.test.Imple.SecurityService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.sena.test.Dto.SecurityDto.UserDto;
 import com.sena.test.Entity.Security.User;
 import com.sena.test.IRepository.ISecurityRepository.UserRepository;
@@ -17,7 +16,7 @@ public class UserServiceImple implements IUserService {
     private UserRepository repository;
 
     @Override
-    public List<User> findAll() {
+    public List<UserDto> findAll() {
 
     //Va a la DB y trae todos los usuarios
     List<User> user = repository.findAll();
@@ -67,8 +66,8 @@ public class UserServiceImple implements IUserService {
         );
     }
 
-    public User entityToDto(User user){
-        return new User(
+    public UserDto entityToDto(User user){
+        return new UserDto(
             user.getId(),
             user.getUser_name(),
             user.getEmail(),
@@ -86,6 +85,6 @@ public class UserServiceImple implements IUserService {
     @Override
     public String delete(int id){
         repository.deleteById(id);
-        return null;
+        return "Usuario eliminado correctamente";
     }
 }

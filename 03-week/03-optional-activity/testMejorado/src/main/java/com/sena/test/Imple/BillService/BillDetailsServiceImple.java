@@ -47,8 +47,8 @@ public class BillDetailsServiceImple implements IBillDetailsService{
         );
     }
 
-    public BillDetails entityToDto(BillDetails billDetails){
-        return new BillDetails(
+    public BillDetailsDto entityToDto(BillDetails billDetails){
+        return new BillDetailsDto(
             billDetails.getId(),
             billDetails.getQuantity(),
             billDetails.getPrice()
@@ -70,6 +70,6 @@ public class BillDetailsServiceImple implements IBillDetailsService{
     @Override
     public String delete(int id){
         repo.deleteById(id);
-        return null;
+        return "Detalle de factura eliminada correctamente";
     }
 }

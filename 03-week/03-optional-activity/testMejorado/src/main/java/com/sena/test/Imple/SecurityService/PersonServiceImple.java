@@ -52,8 +52,8 @@ public class PersonServiceImple implements IPersonService {
         );
     }
 
-    public Person entityToDto(Person person){
-        return new Person(
+    public PersonDto entityToDto(Person person){
+        return new PersonDto(
             person.getId(),
             person.getName(),
             person.getEdad()
@@ -70,6 +70,6 @@ public class PersonServiceImple implements IPersonService {
     @Override
     public String delete(int id){
         repo.deleteById(id);
-        return null;
+        return "Persona eliminada correctamente";
     }
 }

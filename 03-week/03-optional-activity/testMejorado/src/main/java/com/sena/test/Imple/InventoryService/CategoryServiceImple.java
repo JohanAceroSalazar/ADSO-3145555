@@ -48,8 +48,8 @@ public class CategoryServiceImple implements ICategoryService{
         );
     }
 
-    public Category entityToDto(Category category){
-        return new Category(
+    public CategoryDto entityToDto(Category category){
+        return new CategoryDto(
             category.getId(),
             category.getName_category(),
             category.getDescription()
@@ -71,6 +71,6 @@ public class CategoryServiceImple implements ICategoryService{
     @Override
     public String delete(int id){
         repo.deleteById(id);
-        return null;
+        return "Categoria eliminada correctamente";
     }
 }

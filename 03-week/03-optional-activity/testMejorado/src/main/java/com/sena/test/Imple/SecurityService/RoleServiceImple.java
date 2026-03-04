@@ -50,8 +50,8 @@ public class RoleServiceImple implements IRoleService {
         );
     }
 
-    public Role entityToRole(Role role){
-        return new Role(
+    public RoleDto entityToRole(Role role){
+        return new RoleDto(
             role.getId_role(),
             role.getRole()
         );
@@ -67,6 +67,6 @@ public class RoleServiceImple implements IRoleService {
     @Override
     public String delete(int id){
         repo.deleteById(id);
-        return null;
+        return "Rol eliminado correctamente";
     }
 }

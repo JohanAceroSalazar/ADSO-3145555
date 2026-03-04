@@ -49,8 +49,8 @@ public class ProductServiceImple implements IProductService{
         );
     }
 
-    public Product entityToDto(Product product){
-        return new Product(
+    public ProductDto entityToDto(Product product){
+        return new ProductDto(
             product.getId(),
             product.getName_product(),
             product.getPrice(),
@@ -73,6 +73,6 @@ public class ProductServiceImple implements IProductService{
     @Override
     public String delete(int id){
         repo.deleteById(id);
-        return null;
+        return "Producto eliminado correctamente";
     }
 }
