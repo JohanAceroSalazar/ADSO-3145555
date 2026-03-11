@@ -1,0 +1,15 @@
+CREATE OR REPLACE FUNCTION check_price()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.price < 0 THEN
+        RAISE EXCEPTION 'Precio inválido';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_check_price
+BEFORE INSERT OR UPDATE
+ON product
+FOR EACH ROW
+EXECUTE FUNCTION check_price();
