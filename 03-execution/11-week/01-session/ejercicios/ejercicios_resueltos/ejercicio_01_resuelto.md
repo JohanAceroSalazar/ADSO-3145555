@@ -282,3 +282,190 @@ La solución propuesta por el estudiante será válida si cumple con todo lo sig
 
 ## 16. Observación final
 Este ejercicio no solicita la solución final enunciada en el documento. El estudiante deberá diseñarla e implementarla respetando las restricciones técnicas del modelo base.
+
+## 17. Solución propuesta
+# 17.1 Consulta con INNER JOIN
+```sql
+SELECT 
+    r.reservation_code,
+    f.flight_number,
+    f.service_date,
+    t.ticket_number,
+    rp.passenger_sequence_no,
+    CONCAT(p.first_name, ' ', p.last_name) AS passenger_name,
+    fs.segment_number,
+    fs.scheduled_departure_at
+FROM reservation r
+INNER JOIN reservation_passenger rp 
+    ON r.reservation_id = rp.reservation_id
+INNER JOIN person p 
+    ON rp.person_id = p.person_id
+INNER JOIN ticket t 
+    ON rp.reservation_passenger_id = t.reservation_passenger_id
+INNER JOIN ticket_segment ts 
+    ON t.ticket_id = ts.ticket_id
+INNER JOIN flight_segment fs 
+    ON ts.flight_segment_id = fs.flight_segment_id
+INNER JOIN flight f 
+    ON fs.flight_id = f.flight_id;
+```
+# Explicación paso a paso
+- reservation → código de reserva
+- reservation_passenger → relación reserva–pasajero
+- person → datos del pasajero
+- ticket → documento comercial
+- ticket_segment → conexión con el vuelo
+- flight_segment → segmento operativo
+- flight → número y fecha del vuelo
+
+✔ Se usan más de 5 tablas
+✔ Se utiliza INNER JOIN
+✔ Se obtiene trazabilidad completa
+
+## 17.2 Trigger AFTER INSERT
+```sql
+CREATE OR REPLACE FUNCTION fn_generate_boarding_pass()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_code TEXT;
+    v_barcode TEXT;
+BEGIN
+    v_code := 'BP-' || substr(md5(random()::text), 1, 10);
+    v_barcode := substr(md5(random()::text), 1, 20);
+
+    INSERT INTO boarding_pass (
+        check_in_id,
+        boarding_pass_code,
+        barcode_value,
+        issued_at
+    )
+    VALUES (
+        NEW.check_in_id,
+        v_code,
+        v_barcode,
+        now()
+    );
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+Trigger
+CREATE TRIGGER trg_generate_boarding_pass
+AFTER INSERT ON check_in
+FOR EACH ROW
+EXECUTE FUNCTION fn_generate_boarding_pass();
+```
+## Explicación
+
+Cuando se registra un check_in:
+
+Se activa automáticamente el trigger
+Se genera el boarding pass
+Se insertan los datos en la tabla correspondiente
+
+✔ Automatiza el proceso
+ 
+✔ Evita errores manuales
+
+✔ Mantiene integridad del sistema
+
+## 17.3 Procedimiento almacenado
+```sql
+CREATE OR REPLACE PROCEDURE sp_register_checkin(
+    p_ticket_segment_id uuid,
+    p_check_in_status_id uuid,
+    p_boarding_group_id uuid,
+    p_user_id uuid
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO check_in (
+        ticket_segment_id,
+        check_in_status_id,
+        boarding_group_id,
+        checked_in_by_user_id,
+        checked_in_at
+    )
+    VALUES (
+        p_ticket_segment_id,
+        p_check_in_status_id,
+        p_boarding_group_id,
+        p_user_id,
+        now()
+    );
+END;
+$$;
+```
+# Explicación
+- Centraliza la lógica del check-in
+- Recibe parámetros necesarios
+- Inserta el registro
+- Dispara automáticamente el trigger
+## 17.4 Script de prueba (Trigger)
+
+```sql
+INSERT INTO check_in (
+    ticket_segment_id,
+    check_in_status_id,
+    boarding_group_id,
+    checked_in_by_user_id,
+    checked_in_at
+)
+VALUES (
+    (SELECT ticket_segment_id FROM ticket_segment LIMIT 1),
+    (SELECT check_in_status_id FROM check_in_status LIMIT 1),
+    (SELECT boarding_group_id FROM boarding_group LIMIT 1),
+    (SELECT user_account_id FROM user_account LIMIT 1),
+    now()
+);
+```
+
+## 17.5 Uso del procedimiento
+```sql
+CALL sp_register_checkin(
+    (SELECT ticket_segment_id FROM ticket_segment LIMIT 1),
+    (SELECT check_in_status_id FROM check_in_status LIMIT 1),
+    (SELECT boarding_group_id FROM boarding_group LIMIT 1),
+    (SELECT user_account_id FROM user_account LIMIT 1)
+);
+```
+## 17.6 Validación final
+```sql
+SELECT 
+    ci.check_in_id,
+    ci.ticket_segment_id,
+    bp.boarding_pass_code,
+    bp.barcode_value,
+    bp.issued_at
+FROM check_in ci
+INNER JOIN boarding_pass bp 
+    ON ci.check_in_id = bp.check_in_id
+ORDER BY ci.created_at DESC;
+```
+## 18. Resultado final
+
+✔ Consulta con múltiples INNER JOIN
+
+✔ Uso de más de 5 tablas
+
+✔ Trigger AFTER INSERT funcional
+
+✔ Procedimiento almacenado reutilizable
+
+✔ Automatización del flujo de check-in
+
+✔ Validación comprobable
+
+## 19. Archivos relacionados
+setup.sql → contiene trigger y procedimiento
+demo.sql → contiene pruebas y validaciones
+
+## 20. Conclusión
+
+La solución implementada permite:
+
+Mejorar la trazabilidad del pasajero
+Automatizar el proceso de abordaje
+Reducir errores operativos
+Mantener la integridad del modelo

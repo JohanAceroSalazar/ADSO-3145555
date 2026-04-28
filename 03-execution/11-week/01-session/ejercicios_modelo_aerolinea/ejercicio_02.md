@@ -279,3 +279,169 @@ La solución propuesta por el estudiante será válida si cumple con todo lo sig
 
 ## 16. Observación final
 Este ejercicio no solicita la solución final enunciada en el documento. El estudiante deberá diseñarla e implementarla respetando las restricciones técnicas del modelo base.
+
+17. Solución propuesta
+17.1 Consulta con INNER JOIN
+Consulta
+SELECT 
+    s.sale_id,
+    r.reservation_code,
+    p.payment_id,
+    ps.payment_status_name,
+    pm.payment_method_name,
+    pt.transaction_reference,
+    pt.transaction_type,
+    pt.amount,
+    c.currency_code
+FROM sale s
+INNER JOIN reservation r 
+    ON s.reservation_id = r.reservation_id
+INNER JOIN payment p 
+    ON s.sale_id = p.sale_id
+INNER JOIN payment_status ps 
+    ON p.payment_status_id = ps.payment_status_id
+INNER JOIN payment_method pm 
+    ON p.payment_method_id = pm.payment_method_id
+INNER JOIN payment_transaction pt 
+    ON p.payment_id = pt.payment_id
+INNER JOIN currency c 
+    ON p.currency_id = c.currency_id;
+Explicación
+sale → venta principal
+reservation → contexto comercial
+payment → registro del pago
+payment_status → estado actual
+payment_method → método utilizado
+payment_transaction → transacciones financieras
+currency → moneda
+
+✔ Más de 5 tablas
+✔ INNER JOIN aplicado
+✔ Trazabilidad completa del flujo financiero
+
+17.2 Trigger AFTER (Reversión → Refund)
+Función
+CREATE OR REPLACE FUNCTION fn_generate_refund()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.transaction_type = 'REVERSAL' THEN
+        INSERT INTO refund (
+            payment_id,
+            refund_amount,
+            refund_reason,
+            created_at
+        )
+        VALUES (
+            NEW.payment_id,
+            NEW.amount,
+            'Reversión automática',
+            now()
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+Trigger
+CREATE TRIGGER trg_generate_refund
+AFTER INSERT ON payment_transaction
+FOR EACH ROW
+EXECUTE FUNCTION fn_generate_refund();
+Explicación
+
+Cuando se registra una transacción:
+
+Si es tipo REVERSAL
+Se genera automáticamente un refund
+
+✔ Automatiza devoluciones
+✔ Evita control manual
+✔ Mantiene consistencia financiera
+
+17.3 Procedimiento almacenado
+CREATE OR REPLACE PROCEDURE sp_register_payment_transaction(
+    p_payment_id uuid,
+    p_transaction_type varchar,
+    p_amount numeric,
+    p_provider_message text
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO payment_transaction (
+        payment_id,
+        transaction_type,
+        amount,
+        transaction_reference,
+        processed_at,
+        provider_message
+    )
+    VALUES (
+        p_payment_id,
+        p_transaction_type,
+        p_amount,
+        substr(md5(random()::text), 1, 12),
+        now(),
+        p_provider_message
+    );
+END;
+$$;
+Explicación
+Registra una transacción financiera
+Genera referencia automáticamente
+Activa el trigger si aplica
+17.4 Script de prueba (Trigger)
+INSERT INTO payment_transaction (
+    payment_id,
+    transaction_type,
+    amount,
+    transaction_reference,
+    processed_at
+)
+VALUES (
+    (SELECT payment_id FROM payment LIMIT 1),
+    'REVERSAL',
+    100,
+    'TEST-REV',
+    now()
+);
+17.5 Uso del procedimiento
+CALL sp_register_payment_transaction(
+    (SELECT payment_id FROM payment LIMIT 1),
+    'REVERSAL',
+    150,
+    'Reversión por error en cobro'
+);
+17.6 Validación final
+SELECT 
+    p.payment_id,
+    pt.transaction_type,
+    pt.amount,
+    r.refund_amount,
+    r.created_at
+FROM payment p
+INNER JOIN payment_transaction pt 
+    ON p.payment_id = pt.payment_id
+LEFT JOIN refund r 
+    ON p.payment_id = r.payment_id
+ORDER BY pt.processed_at DESC;
+18. Resultado final
+
+✔ Consulta con múltiples INNER JOIN
+✔ Uso de más de 5 tablas
+✔ Trigger AFTER funcional
+✔ Procedimiento reutilizable
+✔ Automatización de devoluciones
+✔ Validación comprobable
+
+19. Archivos relacionados
+setup.sql → trigger + procedimiento
+demo.sql → pruebas
+20. Conclusión
+
+La solución permite:
+
+Controlar el ciclo completo de pagos
+Automatizar devoluciones ante reversos
+Mantener trazabilidad financiera
+Reducir errores operativos

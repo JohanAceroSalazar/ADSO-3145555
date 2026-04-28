@@ -275,3 +275,163 @@ La solución propuesta por el estudiante será válida si cumple con todo lo sig
 
 ## 16. Observación final
 Este ejercicio no solicita la solución final enunciada en el documento. El estudiante deberá diseñarla e implementarla respetando las restricciones técnicas del modelo base.
+
+17. Solución propuesta
+17.1 Consulta con INNER JOIN
+Consulta
+SELECT 
+    s.sale_id,
+    i.invoice_id,
+    isf.invoice_status_name,
+    il.line_number,
+    il.description,
+    il.quantity,
+    il.unit_price,
+    t.tax_name,
+    c.currency_code
+FROM sale s
+INNER JOIN invoice i 
+    ON s.sale_id = i.sale_id
+INNER JOIN invoice_status isf 
+    ON i.invoice_status_id = isf.invoice_status_id
+INNER JOIN invoice_line il 
+    ON i.invoice_id = il.invoice_id
+INNER JOIN tax t 
+    ON il.tax_id = t.tax_id
+INNER JOIN currency c 
+    ON i.currency_id = c.currency_id;
+Explicación
+sale → origen comercial
+invoice → documento facturable
+invoice_status → estado de la factura
+invoice_line → detalle facturable
+tax → impuesto aplicado
+currency → moneda
+
+✔ Más de 5 tablas
+✔ INNER JOIN aplicado
+✔ Trazabilidad completa de facturación
+
+17.2 Trigger AFTER INSERT
+Función
+CREATE OR REPLACE FUNCTION fn_update_invoice_total()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE invoice
+    SET total_amount = (
+        SELECT COALESCE(SUM(quantity * unit_price), 0)
+        FROM invoice_line
+        WHERE invoice_id = NEW.invoice_id
+    )
+    WHERE invoice_id = NEW.invoice_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+Trigger
+CREATE TRIGGER trg_update_invoice_total
+AFTER INSERT ON invoice_line
+FOR EACH ROW
+EXECUTE FUNCTION fn_update_invoice_total();
+Explicación
+
+Cuando se inserta una nueva línea:
+
+Se recalcula el total de la factura
+Se mantiene coherencia entre cabecera y detalle
+
+✔ Automatiza consistencia
+✔ Evita errores manuales
+✔ Refuerza integridad del modelo
+
+17.3 Procedimiento almacenado
+CREATE OR REPLACE PROCEDURE sp_add_invoice_line(
+    p_invoice_id uuid,
+    p_tax_id uuid,
+    p_line_number integer,
+    p_description text,
+    p_quantity numeric,
+    p_unit_price numeric
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO invoice_line (
+        invoice_id,
+        tax_id,
+        line_number,
+        description,
+        quantity,
+        unit_price
+    )
+    VALUES (
+        p_invoice_id,
+        p_tax_id,
+        p_line_number,
+        p_description,
+        p_quantity,
+        p_unit_price
+    );
+END;
+$$;
+Explicación
+Encapsula la creación de líneas facturables
+Permite reutilización
+Dispara automáticamente el trigger
+17.4 Script de prueba (Trigger)
+INSERT INTO invoice_line (
+    invoice_id,
+    tax_id,
+    line_number,
+    description,
+    quantity,
+    unit_price
+)
+VALUES (
+    (SELECT invoice_id FROM invoice LIMIT 1),
+    (SELECT tax_id FROM tax LIMIT 1),
+    1,
+    'Servicio adicional',
+    2,
+    50000
+);
+17.5 Uso del procedimiento
+CALL sp_add_invoice_line(
+    (SELECT invoice_id FROM invoice LIMIT 1),
+    (SELECT tax_id FROM tax LIMIT 1),
+    2,
+    'Equipaje extra',
+    1,
+    80000
+);
+17.6 Validación final
+SELECT 
+    i.invoice_id,
+    i.total_amount,
+    il.line_number,
+    il.description,
+    (il.quantity * il.unit_price) AS line_total
+FROM invoice i
+INNER JOIN invoice_line il 
+    ON i.invoice_id = il.invoice_id
+ORDER BY i.invoice_id, il.line_number;
+18. Resultado final
+
+✔ Consulta con múltiples INNER JOIN
+✔ Uso de más de 5 tablas
+✔ Trigger AFTER INSERT funcional
+✔ Procedimiento reutilizable
+✔ Automatización de consistencia en facturación
+✔ Validación comprobable
+
+19. Archivos relacionados
+setup.sql → trigger y procedimiento
+demo.sql → pruebas y validaciones
+20. Conclusión
+
+La solución permite:
+
+Integrar venta, factura y detalle facturable
+Automatizar el cálculo del total de la factura
+Mantener coherencia entre cabecera y líneas
+Reducir errores operativos

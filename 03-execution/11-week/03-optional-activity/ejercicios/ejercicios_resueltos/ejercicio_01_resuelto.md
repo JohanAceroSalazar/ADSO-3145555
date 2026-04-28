@@ -1,4 +1,4 @@
-# Ejercicio 05 - Mantenimiento de aeronaves y habilitación operativa
+# Ejercicio 01 - Flujo de check-in y trazabilidad comercial del pasajero
 
 # Modelo de datos base del sistema
 
@@ -99,39 +99,47 @@ La solución deberá construirse únicamente sobre las entidades y relaciones re
 ---
 
 ## 6. Contexto del ejercicio
-El área técnica desea consultar el historial de mantenimiento de las aeronaves y automatizar efectos posteriores cuando un evento de mantenimiento cambie de estado o se complete.
+La aerolínea requiere fortalecer la trazabilidad operativa del proceso de abordaje, desde la reserva del pasajero hasta la emisión del pase de abordar. Para ello, se necesita consultar información consolidada del flujo comercial y, además, automatizar parte del proceso de check-in mediante lógica en base de datos.
 
 ---
 
 ## 7. Dominios involucrados en este ejercicio
-### AIRCRAFT
-**Entidades:** `aircraft`, `aircraft_model`, `aircraft_manufacturer`, `maintenance_event`, `maintenance_type`, `maintenance_provider`  
-**Propósito:** Gestionar aeronaves, modelo, fabricante, tipos de mantenimiento y proveedores.
+### SALES, RESERVATION, TICKETING
+**Entidades:** `reservation`, `reservation_passenger`, `sale`, `ticket`, `ticket_segment`  
+**Propósito:** Gestionar el flujo comercial principal del sistema y la relación entre reserva, pasajero y tiquete.
 
-### AIRLINE
-**Entidades:** `airline`  
-**Propósito:** Relacionar cada aeronave con la aerolínea operadora.
+### FLIGHT OPERATIONS
+**Entidades:** `flight`, `flight_segment`, `flight_status`  
+**Propósito:** Relacionar los tiquetes con la operación real del vuelo y sus segmentos.
 
-### GEOGRAPHY AND REFERENCE DATA
-**Entidades:** `address`  
-**Propósito:** Relacionar la ubicación del proveedor de mantenimiento, cuando exista.
+### IDENTITY
+**Entidades:** `person`  
+**Propósito:** Identificar al pasajero asociado a la reserva.
+
+### BOARDING
+**Entidades:** `check_in`, `check_in_status`, `boarding_group`, `boarding_pass`  
+**Propósito:** Gestionar el proceso de registro previo al abordaje y la emisión del pase de abordar.
+
+### SECURITY
+**Entidades:** `user_account`  
+**Propósito:** Identificar el usuario que registra el check-in.
 
 ---
 
 ## 8. Planteamiento del problema
-La organización necesita una visión consolidada de eventos de mantenimiento y un mecanismo automatizado que evidencie cambios posteriores cuando se registra o actualiza un mantenimiento técnico.
+La aerolínea desea consultar qué pasajeros ya se encuentran asociados a reservas y tiquetes válidos para un vuelo determinado, y adicionalmente automatizar la creación del pase de abordar cuando se registra un check-in.
 
 ---
 
 ## 9. Objetivo del ejercicio
-Diseñar un ejercicio de análisis técnico sobre mantenimiento que conecte aeronave, proveedor y eventos de mantenimiento, incorporando trigger posterior y procedimiento almacenado.
+Diseñar una solución en PostgreSQL que permita consultar información consolidada del flujo comercial y operativo de un pasajero, automatizar una acción posterior al registro de check-in y encapsular el proceso en un procedimiento almacenado reutilizable.
 
 ---
 
 ## 10. Requerimiento 1 - Consulta con `INNER JOIN` de al menos 5 tablas
 
 ### Enunciado
-Construya una consulta SQL que relacione aeronave, aerolínea, modelo, fabricante, tipo de mantenimiento, proveedor y estado del evento de mantenimiento.
+Construya una consulta SQL que liste la trazabilidad básica de pasajeros por vuelo, vinculando información de reserva, pasajero, tiquete, segmento y vuelo.
 
 ### Restricciones obligatorias
 - Debe usar **`INNER JOIN`**
@@ -142,28 +150,27 @@ Construya una consulta SQL que relacione aeronave, aerolínea, modelo, fabricant
 
 ### Tablas mínimas sugeridas
 El estudiante deberá incluir, como mínimo, una combinación válida de tablas como:
-- `aircraft`
-- `airline`
-- `aircraft_model`
-- `aircraft_manufacturer`
-- `maintenance_event`
-- `maintenance_type`
-- `maintenance_provider`
+- `reservation`
+- `reservation_passenger`
+- `person`
+- `ticket`
+- `ticket_segment`
+- `flight_segment`
+- `flight`
 
 ### Resultado esperado a nivel funcional
-La consulta debe permitir responder una necesidad como esta: “Mostrar para cada aeronave sus eventos de mantenimiento, el proveedor responsable, el tipo de intervención y el estado actual del evento”.
+La consulta debe permitir responder una necesidad como esta: “Mostrar los pasajeros asociados a un vuelo, indicando la reserva, el tiquete, el segmento y la fecha del servicio”.
 
 ### Campos esperados en el resultado
 Como mínimo, el resultado debe exponer columnas equivalentes a:
-- matrícula o registro de aeronave
-- aerolínea
-- modelo
-- fabricante
-- tipo de mantenimiento
-- proveedor
-- estado del evento
-- fecha de inicio
-- fecha de finalización
+- código de reserva
+- número de vuelo
+- fecha de servicio
+- número de tiquete
+- secuencia del pasajero en la reserva
+- nombre del pasajero
+- segmento del vuelo
+- hora programada de salida
 
 > El estudiante define la consulta exacta, pero debe respetar estrictamente el modelo base.
 
@@ -172,10 +179,10 @@ Como mínimo, el resultado debe exponer columnas equivalentes a:
 ## 11. Requerimiento 2 - Trigger `AFTER`
 
 ### Enunciado
-Diseñe un trigger `AFTER INSERT` o `AFTER UPDATE` sobre `maintenance_event` que automatice una acción verificable asociada a la aeronave intervenida.
+Diseñe un trigger `AFTER INSERT` sobre la tabla `check_in` que automatice una acción posterior relacionada con el proceso de abordaje.
 
 ### Condición funcional del trigger
-Cuando ocurra el evento definido por el estudiante sobre `maintenance_event`, el trigger deberá reflejar una consecuencia verificable sobre la trazabilidad operativa de la aeronave o sobre la lógica técnica seleccionada.
+Cuando se inserte un nuevo registro en `check_in`, el trigger deberá generar o completar la evidencia operativa correspondiente en la tabla `boarding_pass`.
 
 ### Restricciones del trigger
 - Debe ser un trigger **`AFTER`**
@@ -200,19 +207,18 @@ El script de prueba debe:
 ## 12. Requerimiento 3 - Procedimiento almacenado
 
 ### Enunciado
-Diseñe un procedimiento almacenado que registre un nuevo evento de mantenimiento para una aeronave existente.
+Diseñe un procedimiento almacenado que encapsule el proceso de registro de un check-in para un pasajero ya asociado a un `ticket_segment`.
 
 ### Propósito del procedimiento
-Centralizar el registro del mantenimiento para garantizar consistencia en la información técnica.
+Centralizar en una sola unidad lógica el registro del check-in, asegurando que el flujo quede listo para el proceso de abordaje.
 
 ### Alcance funcional mínimo
-El procedimiento debe permitir trabajar con información relacionada con:
-- aeronave
-- tipo de mantenimiento
-- proveedor
-- estado inicial
-- fecha de inicio
-- notas, si aplica
+El procedimiento debe permitir registrar información relacionada con:
+- segmento ticketed
+- estado del check-in
+- grupo de abordaje, si aplica
+- usuario que ejecuta la operación
+- fecha y hora del check-in
 
 ### Restricciones obligatorias
 - Debe implementarse como **procedimiento almacenado**
@@ -222,7 +228,7 @@ El procedimiento debe permitir trabajar con información relacionada con:
 - Debe poder invocarse desde un script SQL independiente
 
 ### Integración esperada
-La operación realizada por el procedimiento debe poder activar el trigger o dejar lista la condición para su validación posterior.
+La operación realizada por el procedimiento debe ser compatible con el trigger solicitado, de modo que al registrar el check-in también sea posible evidenciar la generación posterior del pase de abordar.
 
 ---
 
@@ -278,136 +284,188 @@ La solución propuesta por el estudiante será válida si cumple con todo lo sig
 Este ejercicio no solicita la solución final enunciada en el documento. El estudiante deberá diseñarla e implementarla respetando las restricciones técnicas del modelo base.
 
 ## 17. Solución propuesta
-
-### 17.1 Consulta con INNER JOIN
-
+# 17.1 Consulta con INNER JOIN
 ```sql
 SELECT 
-    a.aircraft_id,
-    al.airline_name,
-    am.model_name,
-    mf.manufacturer_name,
-    mt.maintenance_type_name,
-    mp.provider_name,
-    me.status,
-    me.start_date,
-    me.end_date
-FROM aircraft a
-INNER JOIN airline al 
-    ON a.airline_id = al.airline_id
-INNER JOIN aircraft_model am 
-    ON a.aircraft_model_id = am.aircraft_model_id
-INNER JOIN aircraft_manufacturer mf 
-    ON am.manufacturer_id = mf.aircraft_manufacturer_id
-INNER JOIN maintenance_event me 
-    ON a.aircraft_id = me.aircraft_id
-INNER JOIN maintenance_type mt 
-    ON me.maintenance_type_id = mt.maintenance_type_id
-INNER JOIN maintenance_provider mp 
-    ON me.provider_id = mp.maintenance_provider_id;
+    r.reservation_code,
+    f.flight_number,
+    f.service_date,
+    t.ticket_number,
+    rp.passenger_sequence_no,
+    CONCAT(p.first_name, ' ', p.last_name) AS passenger_name,
+    fs.segment_number,
+    fs.scheduled_departure_at
+FROM reservation r
+INNER JOIN reservation_passenger rp 
+    ON r.reservation_id = rp.reservation_id
+INNER JOIN person p 
+    ON rp.person_id = p.person_id
+INNER JOIN ticket t 
+    ON rp.reservation_passenger_id = t.reservation_passenger_id
+INNER JOIN ticket_segment ts 
+    ON t.ticket_id = ts.ticket_id
+INNER JOIN flight_segment fs 
+    ON ts.flight_segment_id = fs.flight_segment_id
+INNER JOIN flight f 
+    ON fs.flight_id = f.flight_id;
+```
+# Explicación paso a paso
+- reservation → código de reserva
+- reservation_passenger → relación reserva–pasajero
+- person → datos del pasajero
+- ticket → documento comercial
+- ticket_segment → conexión con el vuelo
+- flight_segment → segmento operativo
+- flight → número y fecha del vuelo
 
-17.2 Trigger AFTER UPDATE
-CREATE OR REPLACE FUNCTION fn_log_maintenance_completion()
+✔ Se usan más de 5 tablas
+✔ Se utiliza INNER JOIN
+✔ Se obtiene trazabilidad completa
+
+## 17.2 Trigger AFTER INSERT
+```sql
+CREATE OR REPLACE FUNCTION fn_generate_boarding_pass()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_code TEXT;
+    v_barcode TEXT;
 BEGIN
-    IF NEW.status = 'COMPLETED' THEN
-        INSERT INTO maintenance_event (
-            aircraft_id,
-            maintenance_type_id,
-            provider_id,
-            status,
-            start_date,
-            end_date,
-            notes
-        )
-        VALUES (
-            NEW.aircraft_id,
-            NEW.maintenance_type_id,
-            NEW.provider_id,
-            'HISTORY',
-            NEW.start_date,
-            NEW.end_date,
-            'Registro automático'
-        );
-    END IF;
+    v_code := 'BP-' || substr(md5(random()::text), 1, 10);
+    v_barcode := substr(md5(random()::text), 1, 20);
+
+    INSERT INTO boarding_pass (
+        check_in_id,
+        boarding_pass_code,
+        barcode_value,
+        issued_at
+    )
+    VALUES (
+        NEW.check_in_id,
+        v_code,
+        v_barcode,
+        now()
+    );
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_maintenance_completion
-AFTER UPDATE ON maintenance_event
+Trigger
+CREATE TRIGGER trg_generate_boarding_pass
+AFTER INSERT ON check_in
 FOR EACH ROW
-EXECUTE FUNCTION fn_log_maintenance_completion();
-17.3 Procedimiento almacenado
-CREATE OR REPLACE PROCEDURE sp_register_maintenance(
-    p_aircraft_id uuid,
-    p_maintenance_type_id uuid,
-    p_provider_id uuid,
-    p_status varchar,
-    p_start_date timestamp,
-    p_notes text
+EXECUTE FUNCTION fn_generate_boarding_pass();
+```
+## Explicación
+
+Cuando se registra un check_in:
+
+Se activa automáticamente el trigger
+Se genera el boarding pass
+Se insertan los datos en la tabla correspondiente
+
+✔ Automatiza el proceso
+ 
+✔ Evita errores manuales
+
+✔ Mantiene integridad del sistema
+
+## 17.3 Procedimiento almacenado
+```sql
+CREATE OR REPLACE PROCEDURE sp_register_checkin(
+    p_ticket_segment_id uuid,
+    p_check_in_status_id uuid,
+    p_boarding_group_id uuid,
+    p_user_id uuid
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO maintenance_event (
-        aircraft_id,
-        maintenance_type_id,
-        provider_id,
-        status,
-        start_date,
-        notes
+    INSERT INTO check_in (
+        ticket_segment_id,
+        check_in_status_id,
+        boarding_group_id,
+        checked_in_by_user_id,
+        checked_in_at
     )
     VALUES (
-        p_aircraft_id,
-        p_maintenance_type_id,
-        p_provider_id,
-        p_status,
-        p_start_date,
-        p_notes
+        p_ticket_segment_id,
+        p_check_in_status_id,
+        p_boarding_group_id,
+        p_user_id,
+        now()
     );
 END;
 $$;
-17.4 Script de prueba
-UPDATE maintenance_event
-SET status = 'COMPLETED',
-    end_date = now()
-WHERE maintenance_event_id = (
-    SELECT maintenance_event_id FROM maintenance_event LIMIT 1
+```
+# Explicación
+- Centraliza la lógica del check-in
+- Recibe parámetros necesarios
+- Inserta el registro
+- Dispara automáticamente el trigger
+## 17.4 Script de prueba (Trigger)
+
+```sql
+INSERT INTO check_in (
+    ticket_segment_id,
+    check_in_status_id,
+    boarding_group_id,
+    checked_in_by_user_id,
+    checked_in_at
+)
+VALUES (
+    (SELECT ticket_segment_id FROM ticket_segment LIMIT 1),
+    (SELECT check_in_status_id FROM check_in_status LIMIT 1),
+    (SELECT boarding_group_id FROM boarding_group LIMIT 1),
+    (SELECT user_account_id FROM user_account LIMIT 1),
+    now()
 );
-17.5 Uso del procedimiento
-CALL sp_register_maintenance(
-    (SELECT aircraft_id FROM aircraft LIMIT 1),
-    (SELECT maintenance_type_id FROM maintenance_type LIMIT 1),
-    (SELECT maintenance_provider_id FROM maintenance_provider LIMIT 1),
-    'IN_PROGRESS',
-    now(),
-    'Mantenimiento preventivo'
+```
+
+## 17.5 Uso del procedimiento
+```sql
+CALL sp_register_checkin(
+    (SELECT ticket_segment_id FROM ticket_segment LIMIT 1),
+    (SELECT check_in_status_id FROM check_in_status LIMIT 1),
+    (SELECT boarding_group_id FROM boarding_group LIMIT 1),
+    (SELECT user_account_id FROM user_account LIMIT 1)
 );
-17.6 Validación final
+```
+## 17.6 Validación final
+```sql
 SELECT 
-    aircraft_id,
-    status,
-    start_date,
-    end_date,
-    notes
-FROM maintenance_event
-ORDER BY start_date DESC;
-18. Resultado final
+    ci.check_in_id,
+    ci.ticket_segment_id,
+    bp.boarding_pass_code,
+    bp.barcode_value,
+    bp.issued_at
+FROM check_in ci
+INNER JOIN boarding_pass bp 
+    ON ci.check_in_id = bp.check_in_id
+ORDER BY ci.created_at DESC;
+```
+## 18. Resultado final
 
 ✔ Consulta con múltiples INNER JOIN
-✔ Trigger funcional
-✔ Procedimiento reutilizable
-✔ Automatización del mantenimiento
 
-19. Archivos relacionados
-setup.sql
-demo.sql
-20. Conclusión
+✔ Uso de más de 5 tablas
 
-La solución permite:
+✔ Trigger AFTER INSERT funcional
 
-Controlar mantenimiento de aeronaves
-Automatizar eventos técnicos
-Mantener trazabilidad operativa
+✔ Procedimiento almacenado reutilizable
+
+✔ Automatización del flujo de check-in
+
+✔ Validación comprobable
+
+## 19. Archivos relacionados
+setup.sql → contiene trigger y procedimiento
+demo.sql → contiene pruebas y validaciones
+
+## 20. Conclusión
+
+La solución implementada permite:
+
+Mejorar la trazabilidad del pasajero
+Automatizar el proceso de abordaje
+Reducir errores operativos
+Mantener la integridad del modelo

@@ -277,3 +277,168 @@ La solución propuesta por el estudiante será válida si cumple con todo lo sig
 
 ## 16. Observación final
 Este ejercicio no solicita la solución final enunciada en el documento. El estudiante deberá diseñarla e implementarla respetando las restricciones técnicas del modelo base.
+
+17. Solución propuesta
+17.1 Consulta con INNER JOIN
+Consulta
+SELECT 
+    c.customer_id,
+    CONCAT(p.first_name, ' ', p.last_name) AS customer_name,
+    la.loyalty_account_id,
+    lp.program_name,
+    lt.tier_name,
+    lat.assigned_at,
+    s.sale_id
+FROM customer c
+INNER JOIN person p 
+    ON c.person_id = p.person_id
+INNER JOIN loyalty_account la 
+    ON c.customer_id = la.customer_id
+INNER JOIN loyalty_program lp 
+    ON la.loyalty_program_id = lp.loyalty_program_id
+INNER JOIN loyalty_account_tier lat 
+    ON la.loyalty_account_id = lat.loyalty_account_id
+INNER JOIN loyalty_tier lt 
+    ON lat.loyalty_tier_id = lt.loyalty_tier_id
+INNER JOIN sale s 
+    ON c.customer_id = s.customer_id;
+Explicación
+customer → cliente
+person → datos personales
+loyalty_account → cuenta de fidelización
+loyalty_program → programa asociado
+loyalty_account_tier → historial de niveles
+loyalty_tier → nivel actual
+sale → actividad comercial
+
+✔ Más de 5 tablas
+✔ INNER JOIN aplicado
+✔ Trazabilidad cliente–fidelización–ventas
+
+17.2 Trigger AFTER INSERT
+Función
+CREATE OR REPLACE FUNCTION fn_update_loyalty_tier()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_total_miles numeric;
+BEGIN
+    -- Calcular millas acumuladas
+    SELECT COALESCE(SUM(miles_amount), 0)
+    INTO v_total_miles
+    FROM miles_transaction
+    WHERE loyalty_account_id = NEW.loyalty_account_id;
+
+    -- Regla simple de ejemplo de cambio de nivel
+    IF v_total_miles > 50000 THEN
+        INSERT INTO loyalty_account_tier (
+            loyalty_account_id,
+            loyalty_tier_id,
+            assigned_at
+        )
+        VALUES (
+            NEW.loyalty_account_id,
+            (SELECT loyalty_tier_id FROM loyalty_tier LIMIT 1),
+            now()
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+Trigger
+CREATE TRIGGER trg_update_loyalty_tier
+AFTER INSERT ON miles_transaction
+FOR EACH ROW
+EXECUTE FUNCTION fn_update_loyalty_tier();
+Explicación
+
+Cuando se registra una transacción de millas:
+
+Se recalcula el total acumulado
+Si supera un umbral, se registra un nuevo nivel
+
+✔ Automatiza evolución del cliente
+✔ Evita cálculos manuales
+✔ Mantiene historial de niveles
+
+17.3 Procedimiento almacenado
+CREATE OR REPLACE PROCEDURE sp_register_miles_transaction(
+    p_loyalty_account_id uuid,
+    p_transaction_type varchar,
+    p_miles_amount numeric,
+    p_description text
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO miles_transaction (
+        loyalty_account_id,
+        transaction_type,
+        miles_amount,
+        transaction_date,
+        description
+    )
+    VALUES (
+        p_loyalty_account_id,
+        p_transaction_type,
+        p_miles_amount,
+        now(),
+        p_description
+    );
+END;
+$$;
+Explicación
+Registra acumulación o ajuste de millas
+Centraliza la lógica
+Dispara el trigger automáticamente
+17.4 Script de prueba (Trigger)
+INSERT INTO miles_transaction (
+    loyalty_account_id,
+    transaction_type,
+    miles_amount,
+    transaction_date
+)
+VALUES (
+    (SELECT loyalty_account_id FROM loyalty_account LIMIT 1),
+    'EARN',
+    60000,
+    now()
+);
+17.5 Uso del procedimiento
+CALL sp_register_miles_transaction(
+    (SELECT loyalty_account_id FROM loyalty_account LIMIT 1),
+    'EARN',
+    70000,
+    'Acumulación por vuelo internacional'
+);
+17.6 Validación final
+SELECT 
+    la.loyalty_account_id,
+    lt.tier_name,
+    lat.assigned_at
+FROM loyalty_account la
+INNER JOIN loyalty_account_tier lat 
+    ON la.loyalty_account_id = lat.loyalty_account_id
+INNER JOIN loyalty_tier lt 
+    ON lat.loyalty_tier_id = lt.loyalty_tier_id
+ORDER BY lat.assigned_at DESC;
+18. Resultado final
+
+✔ Consulta con múltiples INNER JOIN
+✔ Uso de más de 5 tablas
+✔ Trigger AFTER INSERT funcional
+✔ Procedimiento reutilizable
+✔ Automatización de niveles de fidelización
+✔ Validación comprobable
+
+19. Archivos relacionados
+setup.sql → trigger y procedimiento
+demo.sql → pruebas
+20. Conclusión
+
+La solución permite:
+
+Analizar la relación cliente–programa–ventas
+Automatizar la acumulación de millas
+Gestionar cambios de nivel automáticamente
+Mantener trazabilidad del historial de fidelización
