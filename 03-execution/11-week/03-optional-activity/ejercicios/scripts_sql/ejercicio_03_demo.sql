@@ -1,76 +1,47 @@
--- ============================================
--- CONSULTA PRINCIPAL (INNER JOIN)
--- ============================================
+DO $$
+DECLARE
+    v_invoice_id uuid;
+    v_tax_id uuid;
+BEGIN
+    -- 1. Buscar una factura existente
+    SELECT invoice_id
+    INTO v_invoice_id
+    FROM invoice
+    LIMIT 1;
 
+    -- 2. Buscar un impuesto (ej. IVA)
+    SELECT tax_id
+    INTO v_tax_id
+    FROM tax
+    LIMIT 1;
+
+    IF v_invoice_id IS NULL THEN
+        RAISE EXCEPTION 'No se encontró una factura para la prueba.';
+    END IF;
+
+    -- 3. Invocar procedimiento (dispara el trigger)
+    CALL sp_add_invoice_line(
+        v_invoice_id,
+        v_tax_id,
+        10, -- line_number
+        'Cargo adicional por servicio especial (Demo)',
+        1.0,
+        50.00
+    );
+
+    RAISE NOTICE 'Línea de factura agregada exitosamente a la factura %', v_invoice_id;
+END;
+$$;
+
+-- 4. Verificación de la actualización en la cabecera y la nueva línea
 SELECT 
-    s.sale_id,
-    i.invoice_id,
-    isf.invoice_status_name,
+    i.invoice_number,
+    i.updated_at AS header_updated_at,
     il.line_number,
-    il.description,
+    il.line_description,
     il.quantity,
-    il.unit_price,
-    t.tax_name,
-    c.currency_code
-FROM sale s
-INNER JOIN invoice i 
-    ON s.sale_id = i.sale_id
-INNER JOIN invoice_status isf 
-    ON i.invoice_status_id = isf.invoice_status_id
-INNER JOIN invoice_line il 
-    ON i.invoice_id = il.invoice_id
-INNER JOIN tax t 
-    ON il.tax_id = t.tax_id
-INNER JOIN currency c 
-    ON i.currency_id = c.currency_id;
-
--- ============================================
--- PRUEBA DIRECTA DEL TRIGGER
--- ============================================
-
-INSERT INTO invoice_line (
-    invoice_id,
-    tax_id,
-    line_number,
-    description,
-    quantity,
-    unit_price
-)
-VALUES (
-    (SELECT invoice_id FROM invoice LIMIT 1),
-    (SELECT tax_id FROM tax LIMIT 1),
-    1,
-    'Servicio adicional',
-    2,
-    50000
-);
-
-
--- ============================================
--- USO DEL PROCEDIMIENTO
--- ============================================
-
-CALL sp_add_invoice_line(
-    (SELECT invoice_id FROM invoice LIMIT 1),
-    (SELECT tax_id FROM tax LIMIT 1),
-    2,
-    'Equipaje extra',
-    1,
-    80000
-);
-
-
--- ============================================
--- VALIDACIÓN FINAL
--- ============================================
-
-SELECT 
-    i.invoice_id,
-    i.total_amount,
-    il.line_number,
-    il.description,
-    (il.quantity * il.unit_price) AS line_total
+    il.unit_price
 FROM invoice i
-INNER JOIN invoice_line il 
-    ON i.invoice_id = il.invoice_id
-ORDER BY i.invoice_id, il.line_number;
+INNER JOIN invoice_line il ON il.invoice_id = i.invoice_id
+WHERE il.line_description = 'Servicio de equipaje adicional (Prueba)'
+ORDER BY il.created_at DESC;
