@@ -1,0 +1,52 @@
+# DDD (Domain Driven Design)
+
+## Estructura
+
+```txt
+
+DDD
+
+│
+
+├── Domain
+
+│   ├── Entities
+
+│   ├── ValueObjects
+
+│   ├── Aggregates
+
+│   ├── RepositoryInterfaces
+
+│   └── DomainServices
+
+│
+
+├── Application
+
+│   ├── UseCases
+
+│   ├── DTOs
+
+│   └── Interfaces
+
+│
+
+├── Infrastructure
+
+│   ├── Persistence
+
+│   ├── Security
+
+│   ├── ExternalServices
+
+│   └── Repositories
+
+│
+
+└── Presentation
+
+    ├── Controllers
+
+    └── Views
+```
